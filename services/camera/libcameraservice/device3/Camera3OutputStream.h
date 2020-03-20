@@ -146,22 +146,18 @@ class Camera3OutputStream :
      */
     virtual status_t setConsumers(const std::vector<sp<Surface>>& consumers);
 
-    class BufferProducerListener : public SurfaceListener {
+    class BufferReleasedListener : public BnProducerListener {
         public:
-            BufferProducerListener(wp<Camera3OutputStream> parent, bool needsReleaseNotify)
-                    : mParent(parent), mNeedsReleaseNotify(needsReleaseNotify) {}
+          BufferReleasedListener(wp<Camera3OutputStream> parent) : mParent(parent) {}
 
-            /**
-            * Implementation of IProducerListener, used to notify this stream that the consumer
-            * has returned a buffer and it is ready to return to Camera3BufferManager for reuse.
-            */
-            virtual void onBufferReleased();
-            virtual bool needsReleaseNotify() { return mNeedsReleaseNotify; }
-            virtual void onBuffersDiscarded(const std::vector<sp<GraphicBuffer>>& buffers);
+          /**
+          * Implementation of IProducerListener, used to notify this stream that the consumer
+          * has returned a buffer and it is ready to return to Camera3BufferManager for reuse.
+          */
+          virtual void onBufferReleased();
 
         private:
-            wp<Camera3OutputStream> mParent;
-            bool mNeedsReleaseNotify;
+          wp<Camera3OutputStream> mParent;
     };
 
     virtual status_t detachBuffer(sp<GraphicBuffer>* buffer, int* fenceFd);
@@ -266,10 +262,10 @@ class Camera3OutputStream :
     sp<Camera3BufferManager> mBufferManager;
 
     /**
-     * Buffer producer listener, used to handle notification when a buffer is released
-     * from consumer side, or a set of buffers are discarded by the consumer.
+     * Buffer released listener, used to notify the buffer manager that a buffer is released
+     * from consumer side.
      */
-    sp<BufferProducerListener> mBufferProducerListener;
+    sp<BufferReleasedListener> mBufferReleasedListener;
 
     /**
      * Flag indicating if the buffer manager is used to allocate the stream buffers
